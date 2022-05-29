@@ -1,18 +1,15 @@
 class Game {
-    var board: Board
+    var board: Board = Board()
     var players: MutableList<Player> = mutableListOf()
     var currentPlayer: Player
-    var currentPlayerIndex: Int
 
     init {
-        board = Board()
-        players.add(classFromType(typeInput(1), symbolInput()))
-        players.add(classFromType(typeInput(2), if (players[0].symbol == "X") "O" else "X"))
-        currentPlayerIndex = (0..1).random()
-        currentPlayer = players[currentPlayerIndex]
+        players.add(getPlayerObject(typeInput(1), symbolInput()))
+        players.add(getPlayerObject(typeInput(2), if (players[0].symbol == "X") "O" else "X"))
+        currentPlayer = players.random()
 
         board.printBoardWithIndexes()
-        currentPlayer.move()
+        processTurn()
     }
 
     fun typeInput(num: Int): String {
@@ -24,15 +21,6 @@ class Game {
         return type
     }
 
-    fun classFromType(type: String, symbol: String): Player {
-        return when (type) {
-            "H" -> HumanPlayer(symbol)
-            "C" -> AiPlayer(symbol)
-            "R" -> RandomPlayer(symbol)
-            else -> Player(symbol)
-        }
-    }
-
     fun symbolInput(): String {
         var symbol: String
         do {
@@ -40,6 +28,33 @@ class Game {
             symbol = readLine()!!.uppercase()
         } while (symbol.length != 1 || !(symbol == "X" || symbol == "O"))
         return symbol
+    }
+
+    fun getPlayerObject(type: String, symbol: String): Player {
+        return when (type) {
+            "H" -> HumanPlayer(symbol, this)
+            "C" -> AiPlayer(symbol, this)
+            "R" -> RandomPlayer(symbol, this)
+            else -> throw IllegalArgumentException("Invalid type")
+        }
+    }
+
+    fun isFinished(): Boolean {
+        if (board.getWinner() != "-") return true
+        return false
+    }
+
+    fun processTurn() {
+        board.grid[currentPlayer.move()] = currentPlayer.symbol
+        board.printBoard()
+
+        if (isFinished()) {
+            if (board.getWinner() == "") println("It's a tie!")
+            else println("${currentPlayer.symbol} wins!")
+        } else {
+            currentPlayer = if (players[0] == currentPlayer) players[1] else players[0]
+            processTurn()
+        }
     }
 }
 
@@ -59,54 +74,124 @@ class Board {
         }
     }
 
-    fun checkWin(): Int {
+    fun getWinner(): String {
+        // Horizontal
         for (i in 0..2) {
-            if (grid[i * 3] == grid[i * 3 + 1] && grid[i * 3] == grid[i * 3 + 2]) {}
+            if (grid[i * 3] == grid[i * 3 + 1] &&
+                            grid[i * 3] == grid[i * 3 + 2] &&
+                            grid[i * 3] != "-"
+            )
+                    return grid[i * 3]
         }
-        return 0
+
+        // Vertical
+        for (i in 0..2) {
+            if (grid[i] == grid[i + 3] && grid[i] == grid[i + 6] && grid[i] != "-") return grid[i]
+        }
+
+        // Diagonal
+        if (grid[0] == grid[4] && grid[0] == grid[8] && grid[4] != "-") return grid[0]
+        if (grid[2] == grid[4] && grid[2] == grid[6] && grid[4] != "-") return grid[2]
+
+        for (i in 0..8) if (grid[i] == "-") return "-"
+
+        return ""
     }
 }
 
-open class Player(_symbol: String) {
+abstract class Player(symbol: String, game: Game) {
     var symbol: String
+    var game: Game
 
     init {
-        this.symbol = _symbol
+        this.symbol = symbol
+        this.game = game
     }
 
-    open fun move() {}
+    abstract fun move(): Int
 }
 
-class HumanPlayer(_symbol: String) : Player(_symbol) {
-    override fun move() {
-        // var move: String
-        // do {
-        //     println("${this.symbol}'s move: (1) to (9)")
-        //     move = readLine()!!.uppercase()
-        // } while (move.length != 1 ||
-        //         move.toInt() < 1 ||
-        //         move.toInt() > 9 ||
-        //         board.grid[move.toInt() - 1] != "-")
-
-        // board.grid[move.toInt() - 1] = this.symbol
-        // board.printBoard()
-        // currentPlayerIndex = (currentPlayerIndex + 1) % 2
-        // currentPlayer = players[currentPlayerIndex]
-
-        // if (board.checkWin() == -1) {
-        //     move()
-        // } else {
-        //     println("Game has ended")
-        // }
+class HumanPlayer(symbol: String, game: Game) : Player(symbol, game) {
+    override fun move(): Int {
+        var move: String
+        do {
+            println("${this.symbol}'s move: (1) to (9)")
+            move = readLine()!!.uppercase()
+        } while (move.length != 1 ||
+                move.toInt() < 1 ||
+                move.toInt() > 9 ||
+                game.board.grid[move.toInt() - 1] != "-")
+        return move.toInt() - 1
     }
 }
 
-class RandomPlayer(_symbol: String) : Player(_symbol) {
-    override fun move() {}
+class RandomPlayer(symbol: String, game: Game) : Player(symbol, game) {
+    override fun move(): Int {
+        println("${this.symbol}'s move: (1) to (9)")
+        var availableIndexes: MutableList<Int> = mutableListOf()
+        for (i in 0..8) if (game.board.grid[i] == "-") availableIndexes.add(i)
+        return availableIndexes.random()
+    }
 }
 
-class AiPlayer(_symbol: String) : Player(_symbol) {
-    override fun move() {}
+class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
+    override fun move(): Int {
+        println("${this.symbol}'s move: (1) to (9)")
+
+        var bestEval: Int = if (this.symbol == "X") Int.MIN_VALUE else Int.MAX_VALUE
+        var index: Int = -1
+        for (i in 0..8) {
+            if (game.board.grid[i] == "-") {
+                game.board.grid[i] = this.symbol
+                var eval: Int = minimax(game.board, 0, if (this.symbol == "X") false else true)
+                game.board.grid[i] = "-"
+                if (this.symbol == "X") {
+                    if (eval > bestEval) {
+                        bestEval = eval
+                        index = i
+                    }
+                } else {
+                    if (eval < bestEval) {
+                        bestEval = eval
+                        index = i
+                    }
+                }
+            }
+        }
+        return index
+    }
+
+    fun minimax(node: Board, depth: Int, maximizing: Boolean): Int {
+        if (node.getWinner() != "-") {
+            var eval: Int = 0
+            if (node.getWinner() == "X") eval = 1 else if (node.getWinner() == "O") eval = -1
+            return eval
+        }
+
+        if (maximizing) {
+            var maxEval: Int = -10
+            for (i in 0..8) {
+                if (node.grid[i] == "-") {
+                    node.grid[i] = "X"
+                    var eval: Int = minimax(node, depth + 1, false)
+                    node.grid[i] = "-"
+                    maxEval = if (eval > maxEval) eval else maxEval
+                }
+            }
+            return maxEval
+        } else {
+            var minEval: Int = 10
+            for (i in 0..8) {
+                if (node.grid[i] == "-") {
+                    node.grid[i] = "O"
+                    var eval: Int = minimax(node, depth + 1, true)
+                    node.grid[i] = "-"
+                    minEval = if (eval < minEval) eval else minEval
+                }
+            }
+            return minEval
+        }
+    }
 }
 
 fun main() {
