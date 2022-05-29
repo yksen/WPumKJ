@@ -165,8 +165,8 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
         var alpha = _alpha
         var beta = _beta
 
+        ++this.nodeCount
         if (node.getWinner() != "-") {
-            ++this.nodeCount
             var eval: Int = 0
             if (node.getWinner() == "X") eval = 1 else if (node.getWinner() == "O") eval = -1
             return eval
@@ -176,7 +176,6 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
             var maxEval: Int = Int.MIN_VALUE
             for (i in 0..8) {
                 if (node.grid[i] == "-") {
-                    ++this.nodeCount
                     node.grid[i] = "X"
                     var eval: Int = alphabeta(node, false, alpha, beta)
                     node.grid[i] = "-"
@@ -191,7 +190,6 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
             var minEval: Int = Int.MAX_VALUE
             for (i in 0..8) {
                 if (node.grid[i] == "-") {
-                    ++this.nodeCount
                     node.grid[i] = "O"
                     var eval: Int = alphabeta(node, true, alpha, beta)
                     node.grid[i] = "-"
