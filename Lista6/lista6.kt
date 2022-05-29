@@ -147,7 +147,7 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
         for (i in 0..8) {
             if (game.board.grid[i] == "-") {
                 game.board.grid[i] = this.symbol
-                var eval: Int = minimax(game.board, 0, if (this.symbol == "X") false else true)
+                var eval: Int = minimax(game.board, if (this.symbol == "X") false else true)
                 game.board.grid[i] = "-"
                 if (this.symbol == "X") {
                     if (eval > bestEval) {
@@ -167,11 +167,11 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
         return index
     }
 
-    fun minimax(node: Board, depth: Int, maximizing: Boolean): Int {
-        return alphabeta(node, depth, maximizing, Int.MIN_VALUE, Int.MAX_VALUE)
+    fun minimax(node: Board, maximizing: Boolean): Int {
+        return alphabeta(node, maximizing, Int.MIN_VALUE, Int.MAX_VALUE)
     }
 
-    fun alphabeta(node: Board, depth: Int, maximizing: Boolean, _alpha: Int, _beta: Int): Int {
+    fun alphabeta(node: Board, maximizing: Boolean, _alpha: Int, _beta: Int): Int {
         var alpha = _alpha
         var beta = _beta
         
@@ -188,7 +188,7 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
                 if (node.grid[i] == "-") {
                     ++this.nodeCount
                     node.grid[i] = "X"
-                    var eval: Int = alphabeta(node, depth + 1, false, alpha, beta)
+                    var eval: Int = alphabeta(node, false, alpha, beta)
                     node.grid[i] = "-"
                     maxEval = if (eval > maxEval) eval else maxEval
 
@@ -203,7 +203,7 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
                 if (node.grid[i] == "-") {
                     ++this.nodeCount
                     node.grid[i] = "O"
-                    var eval: Int = alphabeta(node, depth + 1, true, alpha, beta)
+                    var eval: Int = alphabeta(node, true, alpha, beta)
                     node.grid[i] = "-"
                     minEval = if (eval < minEval) eval else minEval
                     
