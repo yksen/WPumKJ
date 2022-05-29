@@ -75,21 +75,11 @@ class Board {
     }
 
     fun getWinner(): String {
-        // Horizontal
         for (i in 0..2) {
-            if (grid[i * 3] == grid[i * 3 + 1] &&
-                            grid[i * 3] == grid[i * 3 + 2] &&
-                            grid[i * 3] != "-"
-            )
-                    return grid[i * 3]
-        }
-
-        // Vertical
-        for (i in 0..2) {
+            if (grid[i * 3] == grid[i * 3 + 1] && grid[i * 3] == grid[i * 3 + 2] && grid[i * 3] != "-") return grid[i * 3]
             if (grid[i] == grid[i + 3] && grid[i] == grid[i + 6] && grid[i] != "-") return grid[i]
         }
 
-        // Diagonal
         if (grid[0] == grid[4] && grid[0] == grid[8] && grid[4] != "-") return grid[0]
         if (grid[2] == grid[4] && grid[2] == grid[6] && grid[4] != "-") return grid[2]
 
@@ -174,7 +164,7 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
     fun alphabeta(node: Board, maximizing: Boolean, _alpha: Int, _beta: Int): Int {
         var alpha = _alpha
         var beta = _beta
-        
+
         if (node.getWinner() != "-") {
             ++this.nodeCount
             var eval: Int = 0
@@ -206,7 +196,7 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
                     var eval: Int = alphabeta(node, true, alpha, beta)
                     node.grid[i] = "-"
                     minEval = if (eval < minEval) eval else minEval
-                    
+
                     beta = if (eval < beta) eval else beta
                     if (beta <= alpha) break
                 }
