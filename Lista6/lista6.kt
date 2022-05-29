@@ -135,8 +135,12 @@ class RandomPlayer(symbol: String, game: Game) : Player(symbol, game) {
 }
 
 class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
+    var nodeCount: Int = 0
+
     override fun move(): Int {
         println("${this.symbol}'s move: (1) to (9)")
+
+        this.nodeCount = 0
 
         var bestEval: Int = if (this.symbol == "X") Int.MIN_VALUE else Int.MAX_VALUE
         var index: Int = -1
@@ -158,35 +162,53 @@ class AiPlayer(symbol: String, game: Game) : Player(symbol, game) {
                 }
             }
         }
+
+        println("Analyzed nodes: ${this.nodeCount}")
         return index
     }
 
     fun minimax(node: Board, depth: Int, maximizing: Boolean): Int {
+        return alphabeta(node, depth, maximizing, Int.MIN_VALUE, Int.MAX_VALUE)
+    }
+
+    fun alphabeta(node: Board, depth: Int, maximizing: Boolean, _alpha: Int, _beta: Int): Int {
+        var alpha = _alpha
+        var beta = _beta
+        
         if (node.getWinner() != "-") {
+            ++this.nodeCount
             var eval: Int = 0
             if (node.getWinner() == "X") eval = 1 else if (node.getWinner() == "O") eval = -1
             return eval
         }
 
         if (maximizing) {
-            var maxEval: Int = -10
+            var maxEval: Int = Int.MIN_VALUE
             for (i in 0..8) {
                 if (node.grid[i] == "-") {
+                    ++this.nodeCount
                     node.grid[i] = "X"
-                    var eval: Int = minimax(node, depth + 1, false)
+                    var eval: Int = alphabeta(node, depth + 1, false, alpha, beta)
                     node.grid[i] = "-"
                     maxEval = if (eval > maxEval) eval else maxEval
+
+                    alpha = if (eval > alpha) eval else alpha
+                    if (beta <= alpha) break
                 }
             }
             return maxEval
         } else {
-            var minEval: Int = 10
+            var minEval: Int = Int.MAX_VALUE
             for (i in 0..8) {
                 if (node.grid[i] == "-") {
+                    ++this.nodeCount
                     node.grid[i] = "O"
-                    var eval: Int = minimax(node, depth + 1, true)
+                    var eval: Int = alphabeta(node, depth + 1, true, alpha, beta)
                     node.grid[i] = "-"
                     minEval = if (eval < minEval) eval else minEval
+                    
+                    beta = if (eval < beta) eval else beta
+                    if (beta <= alpha) break
                 }
             }
             return minEval
