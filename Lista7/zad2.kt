@@ -5,7 +5,7 @@ import java.util.concurrent.*
 
 fun main() {
     val n: Long = 17L
-    println("n! = ${sumOfFactorialInverses(n)}")
+    println("1/n! = ${sumOfFactorialInverses(n)}")
 }
 
 fun factorial(n: Long): BigDecimal {
