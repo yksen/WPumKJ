@@ -1,9 +1,18 @@
-import java.math.BigInteger
 import java.util.concurrent.*
 
-fun factorial(n: Long): BigInteger {
-    var calculatedProduct = BigInteger.ONE
+internal class Product(var from: Long, var to: Long) : Callable<BigInteger> {
+    var localProduct: BigInteger = BigInteger.ONE
+    override fun call(): BigInteger {
+        for (i in from..to) localProduct = localProduct.multiply(BigInteger.valueOf(i))
+        return localProduct
+    }
+}
+
+fun main() {
     val NUM_THREADS = 10
+    val n: Long = 100000L
+    var number: Int = 0
+    var highestCount: Int = 0
 
     val executorService = Executors.newFixedThreadPool(NUM_THREADS)
     val multiplicationTasks: MutableList<Future<BigInteger>> = ArrayList()
@@ -29,18 +38,6 @@ fun factorial(n: Long): BigInteger {
         }
     }
     executorService.shutdown()
-    return calculatedProduct
-}
 
-internal class Product(var from: Long, var to: Long) : Callable<BigInteger> {
-    var localProduct: BigInteger = BigInteger.ONE
-    override fun call(): BigInteger {
-        for (i in from..to) localProduct = localProduct.multiply(BigInteger.valueOf(i))
-        return localProduct
-    }
-}
-
-fun main() {
-    val n: Long = 100L
-    println("$n! = ${factorial(n)}")
+    println("Number = $number\nDivisor count = $highestCount")
 }
